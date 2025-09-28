@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Silent Thrill — Horror Ambience</title>
+  <style>
+    :root { --bg:#0a0a0a; --fg:#f1f1f1; --muted:#bdbdbd; --accent:#ff3b3b; --panel:#141414; --border:#2a2a2a; }
+    html, body { height:100%; margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Helvetica Neue',Arial,'Noto Sans',sans-serif; }
+    .wrap { display:flex; align-items:center; justify-content:center; height:100%; }
+    .panel { width:min(560px,92vw); border:1px solid var(--border); background:linear-gradient(180deg, #111, #0c0c0c); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.55); padding:18px; }
+    .title { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+    h1 { font-size:18px; margin:0; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); }
+    .hint { font-size:12px; color:var(--muted); }
+    .tracks { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+    .btn { padding:10px 12px; border:1px solid var(--border); background:var(--panel); color:var(--fg); border-radius:12px; cursor:pointer; }
+    .btn:hover { border-color:#3a3a3a; }
+    .btn.active { outline:2px solid var(--accent); }
+    .controls { display:flex; align-items:center; gap:8px; margin-top:12px; }
+    .big { padding:10px 14px; border-radius:12px; border:0; background:var(--accent); color:white; cursor:pointer; }
+    .big:hover { filter:brightness(1.1); }
+    .status { font-size:12px; color:#8be28b; margin-left:auto; }
+    .vol { width:120px; }
+    .credit { margin-top:10px; font-size:11px; color:var(--muted); }
+    a { color:var(--fg); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <div class="title">
+        <h1>Silent Thrill</h1>
+        <div class="hint">If you can't hear it, click Play once.</div>
+      </div>
+
+      <div id="trackList" class="tracks"></div>
+
+      <div class="controls">
+        <button id="play" class="big">Play</button>
+        <button id="pause" class="big" style="background:#333">Pause</button>
+        <label class="hint">Vol <input id="vol" class="vol" type="range" min="0" max="1" step="0.01" value="0.8"></label>
+        <div id="status" class="status">Idle</div>
+      </div>
+
+      <div class="credit">Tip: Drop more MP3s in this repo and add them below to expand your playlist.</div>
+    </div>
+  </div>
+
+  <audio id="audio" loop playsinline></audio>
+
+  <script>
+    // Track list — your main ambience is already plugged in
+    const TRACKS = [
+      { name: "I’ve lost everyone (Silent Hill Inspired)", url: "I’ve lost everyone _ Silent Hill Inspired Ambience [cz1aqWVUNTQ].mp3" },
+      { name: "Future Track 2", url: "track2.mp3" },
+      { name: "Future Track 3", url: "track3.mp3" },
+      { name: "Future Track 4", url: "track4.mp3" },
+    ];
+
+    const audio = document.getElementById('audio');
+    const list = document.getElementById('trackList');
+    const status = document.getElementById('status');
+    const vol = document.getElementById('vol');
+    const playBtn = document.getElementById('play');
+    const pauseBtn = document.getElementById('pause');
+
+    function setStatus(txt) { status.textContent = txt; }
+
+    function render() {
+      list.innerHTML = "";
+      TRACKS.forEach((t, i) => {
+        const b = document.createElement('button');
+        b.className = 'btn';
+        b.textContent = t.name;
+        b.addEventListener('click', () => select(i));
+        list.appendChild(b);
+      });
+    }
+
+    let current = 0;
+    function select(i) {
+      current = i;
+      [...list.children].forEach((el, idx) => el.classList.toggle('active', idx === i));
+      audio.src = TRACKS[i].url;
+      tryAutoplay();
+      setStatus('Loading: ' + TRACKS[i].name);
+    }
+
+    async function tryAutoplay() {
+      try {
+        audio.muted = true;
+        await audio.play();
+        audio.muted = false;
+        setStatus('Playing');
+      } catch (e) {
+        setStatus('Ready — click Play');
+      }
+    }
+
+    playBtn.addEventListener('click', async () => {
+      try {
+        await audio.play();
+        setStatus('Playing');
+      } catch (e) {
+        alert('Interaction required — click again.');
+      }
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      audio.pause();
+      setStatus('Paused');
+    });
+
+    vol.addEventListener('input', () => {
+      audio.volume = parseFloat(vol.value);
+    });
+
+    // Init
+    render();
+    select(0);
+    audio.volume = parseFloat(vol.value);
+  </script>
+</body>
+</html>
