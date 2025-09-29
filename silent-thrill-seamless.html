@@ -3,16 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Silent Thrill — Seamless Loop</title>
+  <title>Silent Thrill — Seamless Loop (with ?vol=)</title>
   <style>
     html,body{height:100%;margin:0;background:#0a0a0a;color:#f1f1f1;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial}
     .wrap{height:100%;display:flex;align-items:center;justify-content:center}
-    .card{padding:18px 22px;border:1px solid #2a2a2a;border-radius:16px;background:linear-gradient(180deg,#111,#0d0d0d);box-shadow:0 10px 30px rgba(0,0,0,.55);text-align:center}
+    .card{padding:18px 22px;border:1px solid #2a2a2a;border-radius:16px;background:linear-gradient(180deg,#111,#0d0d0d);box-shadow:0 10px 30px rgba(0,0,0,.55);text-align:center;max-width:520px}
     h1{margin:0 0 8px;font-size:18px;letter-spacing:.08em;text-transform:uppercase;color:#ff3b3b}
     .muted{font-size:12px;color:#bdbdbd;margin-bottom:10px}
     button{padding:10px 14px;border-radius:12px;border:0;background:#ff3b3b;color:#fff;cursor:pointer}
     button:hover{filter:brightness(1.1)}
     .ok{margin-top:8px;color:#8be28b;font-size:12px;display:none}
+    .vol{margin-top:8px;font-size:12px;color:#cfcfcf}
+    code{background:#151515;padding:2px 6px;border-radius:6px}
   </style>
 </head>
 <body>
@@ -22,6 +24,7 @@
       <div class="muted">Click Play to start seamless loop.</div>
       <button id="play">Play</button>
       <div id="ok" class="ok">Playing ✓</div>
+      <div id="voltext" class="vol">Volume: <span id="vnum">80%</span> (set via <code>?vol=</code>)</div>
     </div>
   </div>
 
@@ -31,13 +34,40 @@
   </audio>
 
   <script>
-    const a = document.getElementById('audio');
-    const b = document.getElementById('play');
+    const a  = document.getElementById('audio');
+    const b  = document.getElementById('play');
     const ok = document.getElementById('ok');
+    const vnum = document.getElementById('vnum');
+
+    function clamp(x, lo, hi){ return Math.max(lo, Math.min(hi, x)); }
+
+    function readVolFromQuery(){
+      const p = new URLSearchParams(location.search);
+      if (!p.has('vol')) return null;
+      let v = parseFloat(p.get('vol'));
+      if (isNaN(v)) return null;
+      // Support 0..1 or 0..100
+      if (v > 1.0) v = v / 100.0;
+      return clamp(v, 0.0, 1.0);
+    }
+
+    // Apply volume BEFORE any play attempts
+    (function initVolume(){
+      const v = readVolFromQuery();
+      if (v !== null){
+        a.volume = v;
+        vnum.textContent = Math.round(v * 100) + '%';
+      } else {
+        a.volume = 0.8; // default if no ?vol=
+        vnum.textContent = '80%';
+      }
+    })();
+
     b.addEventListener('click', async ()=>{
       try{ await a.play(); ok.style.display='block'; }
       catch(e){ alert('Click again to allow audio.'); }
     });
+
     // try muted autoplay if allowed
     (async()=>{ try{ a.muted=true; await a.play(); a.muted=false; ok.style.display='block'; } catch(e){} })();
   </script>
